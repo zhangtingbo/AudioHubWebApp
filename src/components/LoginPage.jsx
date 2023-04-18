@@ -3,8 +3,9 @@ import {useNavigate} from "react-router-dom";
 import Axios from 'axios';
 
 function LoginPage(props) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('tester');
+  const [email,setEmail] = useState('tester@example.com')
+  const [password, setPassword] = useState('password');
   let [error, setError] = React.useState(null);
 
   const navigate = useNavigate();
@@ -16,6 +17,10 @@ function LoginPage(props) {
   const handlePasswordChange = (event) => {
     setPassword(event.target.value);
   };
+
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value);
+  }
 
   const submitForm =(target)=>{
 
@@ -63,6 +68,15 @@ function LoginPage(props) {
             id="username"
             value={username}
             onChange={handleUsernameChange}
+          />
+        </div>
+        <div>
+          <label htmlFor="email">Email:</label>
+          <input
+            type="text"
+            id="email"
+            value={email}
+            onChange={handleEmailChange}
           />
         </div>
         <div>
