@@ -1,11 +1,7 @@
 const express = require('express');
-// const trackRoute = express.Router();
 const cors = require('cors');
 const mongoose = require('mongoose');
-const mongodb = require('mongodb');
-const {MongoClient,GridFSBucket} = require('mongodb');
 const multer = require('multer');
-const { Readable } = require('stream');
 const {GridFsStorage} = require('multer-gridfs-storage');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
@@ -18,7 +14,7 @@ const jwt = require('jsonwebtoken');
  * Create Express server && Express Router configuration.
  */
 const app = express();
-// app.use('/uploadaudio', trackRoute);
+
 // Middleware
 app.use(cors({origin: true, credentials: true}))
 app.use(bodyParser.json());
@@ -32,24 +28,65 @@ app.use(express.static('./downloads'));
 // let the react app to handle any unknown routes 
 // serve up the index.html if express does'nt recognize the route
 // const path = require('path');
-// app.get('*', (req, res) => {
-// res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
-// });
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, "/index.html"));
+});
+
+// if not in production use the port 5000
+const PORT = process.env.PORT || 5000;
+console.log('server started on port:', PORT);
+app.listen(PORT);
 
 /**
  * Connect Mongo Driver to MongoDB.
  */
 // use when starting application as docker container
-let mongoUrlDocker = "mongodb://admin:password@localhost:27017/audio-db?authSource=admin&readPreference=primary&ssl=false&directConnection=true";
+let mongoUrlLocal = "mongodb://admin:password@0.0.0.0:27017/audio-db?authSource=admin&readPreference=primary&ssl=false&directConnection=true";
+let mongoUrlDocker = "mongodb://admin:password@mongodb:27017/audio-db?authSource=admin&readPreference=primary&ssl=false&directConnection=true";
 // pass these options to mongo client connect request to avoid DeprecationWarning for current Server Discovery and Monitoring engine
-let mongoClientOptions = { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true};
+
 // Create mongo connection
-mongoose.connect(mongoUrlDocker,mongoClientOptions)
+let gfs;
+// Init gfs
+const conn = mongoose.createConnection(mongoUrlLocal);
+conn.once('open', () => {
+  // Init stream
+  gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName:'audios'});
+});
 
-// mongoose.connect(mongoUrlDocker,mongoClientOptions);
+mongoose.connect(mongoUrlLocal).then(res=>{
+  console.log("Connect DB successed")
+}).catch(err=>{
+  console.log("Connect DB failed")
+});
 
+const storage = new GridFsStorage({
+  url: mongoUrlLocal,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      crypto.randomBytes(16, (err, buf) => {
+        if (err) {
+          return reject(err);
+        }
+
+        const filename = buf.toString('hex') + path.extname(file.originalname);
+        const fileInfo = {
+          filename: filename,
+          bucketName: 'audios',
+          metadata: {
+            username: req.body.username,
+            userid:req.body.userid,
+            category:req.body.category,
+            description:req.body.description,
+            url:'',
+            newFilename:req.body.newFilename
+          }
+        };
+        resolve(fileInfo);
+      });
+    });
+  }
+});
 
 /**
  * User Login services
@@ -58,8 +95,6 @@ const User = mongoose.model('users', new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
 }));
-
-app.use(express.json());
 
 app.get('/api/checkusername/:username',async (req,res)=>{
   const { username } = req.params;
@@ -227,41 +262,9 @@ app.delete('/api/deleteaccount/', async (req, res) => {
  * Audio upload/download services
  */
 // Create storage engine
-// Init gfs
-let gfs;
-const conn = mongoose.createConnection(mongoUrlDocker,mongoClientOptions);
-conn.once('open', () => {
-  // Init stream
-  gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName:'audios'});
-});
 
-const storage = new GridFsStorage({
-    url: mongoUrlDocker,
-    file: (req, file) => {
-      return new Promise((resolve, reject) => {
-        crypto.randomBytes(16, (err, buf) => {
-          if (err) {
-            return reject(err);
-          }
 
-          const filename = buf.toString('hex') + path.extname(file.originalname);
-          const fileInfo = {
-            filename: filename,
-            bucketName: 'audios',
-            metadata: {
-              username: req.body.username,
-              userid:req.body.userid,
-              category:req.body.category,
-              description:req.body.description,
-              url:'',
-              newFilename:req.body.newFilename
-            }
-          };
-          resolve(fileInfo);
-        });
-      });
-    }
-});
+
 const upload = multer({ storage });
 
 // @route POST /upload
@@ -317,15 +320,6 @@ app.get('/api/loadaudio', (req, res) => {
       console.log("Download start:",id,filename,contentType)
       const obj_id = new mongoose.Types.ObjectId(req.query.id);
 
-      // let ext = '.mp3';
-      // switch (req.params.contentType){
-      //   case 'audio/wav':
-      //     ext = '.wav';
-      //     break;
-      //   default:
-      //     break;
-      // }
-
       const downloadStream = gfs.openDownloadStream(obj_id);
       // const downloadfilename = req.params.filename;
       // console.log(downloadfilename)
@@ -372,7 +366,3 @@ app.delete('/api/audio/:id', async (req, res) => {
   }
 });
 
-// if not in production use the port 5000
-const PORT = process.env.PORT || 5000;
-console.log('server started on port:', PORT);
-app.listen(PORT);

@@ -2,14 +2,71 @@ import React,{ useState } from 'react';
 import {useNavigate} from "react-router-dom";
 import Axios from 'axios';
 import { useSelector,useDispatch} from "react-redux";
+import { makeStyles } from '@material-ui/core/styles';
+import { Paper } from '@material-ui/core';
 
 import {getUserAccount,updateUserAccount} from '../redux/userLoginSlice';
 import {serverUrl,delay} from '../common/variables';
 import {validatePassword, validateUsername} from '../common/util';
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+      height: '420px',
+      width: '400px',
+      margin: '20px auto',
+      backgroundColor: theme.palette.primary.bg,
+      color: theme.palette.primary.contrastText,
+      boxShadow: '5px 5px 5px 0 rgba(0, 0, 0, 0.4)',
+  },
+  container:{
+    width:'240px',
+    margin: '0 auto'
+  },
+  h2:{
+    display:'block',
+    height:'60px',
+    fontSize:'2em'
+  },
+  h3:{
+    display:'block',
+    fontSize:'1.5em'
+  },
+  h4:{
+    display:'block',
+    fontSize:'1em'
+  },
+  message:{
+    fontSize:'0.8em'
+  },
+  input:{
+      width:'100%'
+  },
+  button: {
+      marginTop:'20px'
+  },
+  inputGrp: {
+    display:'flex',
+    flexDirection: 'column',
+    alignItems:'baseline'
+  },
+  withButton:{
+    display:'flex',
+    flexDirection:'row',
+    height:'25px'
+  },
+  buttonGrp:{
+    display:'flex',
+    flexDirection:'row',
+    justifyContent:'space-around',
+    margin:'20px auto'
+  }
+}));
+
 function PasswordDialog(props) {
+  const classes = useStyles();
+
   const [password, setPassword] = useState('');
-  const [message,setMessage] = useState('');
+  const [message,setMessage] = useState('fdf');
 
   const handleInputChange = (event) => {
     setPassword(event.target.value);
@@ -61,20 +118,24 @@ function PasswordDialog(props) {
   };
 
   return (
-    <div className="password-dialog">
-      <h2>Please input Password：</h2>
-      <input type="password" value={password} onChange={handleInputChange} />
-      <div className="button-group">
+    <div className={classes.container}>
+      <div className={classes.inputGrp}>
+        <label >Please input Password：</label>
+        
+        <div className={classes.withButton}>
+        <input type="password" value={password} onChange={handleInputChange} />
         <button onClick={handleConfirmClick}>Confirm</button>
-        <button onClick={handleCancelClick}>Cancel</button>
+          <button onClick={handleCancelClick}>Cancel</button>
+        </div>
       </div>
+
       <p>{message}</p>
     </div>
   );
 }
 
 function ManageAccountPage(props){
-    
+  const classes = useStyles();
   const navigate = useNavigate();
 
   const user = useSelector(getUserAccount);
@@ -84,7 +145,7 @@ function ManageAccountPage(props){
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [showDialog, setShowDialog] = useState(false);
+  const [showDialog, setShowDialog] = useState(true);
   const [message,setMessage] = useState('');
   // const [passwordValidMessage,setPasswordValidMessage] = useState('');
 
@@ -159,7 +220,7 @@ function ManageAccountPage(props){
 
   const handleCancel = (e)=>{
     e.preventDefault();
-    navigate('/');
+    navigate('/audiohub');
   }
 
   const handleDeleteAccount = (e)=>{
@@ -188,58 +249,67 @@ function ManageAccountPage(props){
       // reset User Accout Redux Store here, to clear it
       dispatch(updateUserAccount({username:'',token:'',userid:''}));
 
-      navigate('/login');
+      navigate('/');
     }).catch(err=>{
       console.log("Internal server error!",err);
     });
   }
 
   return (
-    <div>
-      <h1>Manage Your Account</h1>
-      <h2>Current User：{user.username}</h2>
-      <div>
-        <div>
+    <Paper className={classes.root}>
+      <label className={classes.h2}>Manage Your Account</label>
+      <label className={classes.h3}>Current User：{user.username}</label>
+      <div className={classes.container}>
+        <div className={classes.inputGrp}>
           <label htmlFor="newusername">Update New User Name:</label>
-          <input
-            type="text"
-            id="newusername"
-            value={newusername}
-            onChange={(e) => setNewusername(e.target.value)}
-          />
-          <button onClick={handleUsernameUpdate}>Confirm Update</button>
+          <div className={classes.withButton}>
+            <input
+              type="text"
+              id="newusername"
+              value={newusername}
+              onChange={(e) => setNewusername(e.target.value)}
+            />
+            <button onClick={handleUsernameUpdate}>Confirm</button>
+          </div>
         </div>
-        <div>
-          <label htmlFor="password">New Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+        <div style={{marginTop:'10px'}}>
+          <div className={classes.inputGrp}>
+            <label htmlFor="password">New Password:</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className={classes.inputGrp}>
+            <label htmlFor="confirmPassword">Confirm New Password:</label>
+            <div className={classes.withButton}>
+              <input
+                type="password"
+                id="confirmPassword"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <button onClick={handlePasswordUpdate}>Confirm</button>
+            </div>
+          </div>
         </div>
-        <div>
-          <label htmlFor="confirmPassword">Confirm New Password:</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-          <button onClick={handlePasswordUpdate}>Confirm Update</button>
-        </div>
-        
         {/* <button type="submit">Confirm</button> */}
-        <button onClick={handleCancel}>Cancel</button>
-        <p>{message}</p>
-        <button onClick={handleDeleteAccount}>Delete Account</button>
+        
+        <label className={classes.message}>{message}</label>
+
+        <div className={classes.buttonGrp}>
+          <button onClick={handleDeleteAccount}>Delete Account</button>
+          <button onClick={handleCancel}>Cancel</button>
+        </div>
 
         {showDialog && (
           <PasswordDialog onConfirm={handleConfirmPassword} onCancel={handleCancelPassword} 
             user={user}/>
         )}
       </div>
-    </div>
+    </Paper>
   );
 }
 

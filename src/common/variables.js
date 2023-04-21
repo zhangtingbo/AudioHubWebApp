@@ -20,6 +20,10 @@ import PreviousPage from '@material-ui/icons/ChevronLeft';
 import NextPage from '@material-ui/icons/ChevronRight';
 import GetAppIcon from '@material-ui/icons/GetApp';
 
+export const serverUrl = "http://localhost:5000";
+
+export const delay = 5000;
+
 export const tableIcons = {
     Delete: forwardRef((props, ref) => <DeleteIcon {...props} ref={ref} />),
     DeleteDisable: forwardRef((props, ref) => <DeleteIcon {...props} ref={ref} style={{color: 'gray'}}/>),
@@ -43,6 +47,3 @@ export const tableIcons = {
     Download:forwardRef((props,ref)=><GetAppIcon {...props} ref={ref}/>)
 };
 
-export const serverUrl = "http://localhost:5000";
-
-export const delay = 5000;

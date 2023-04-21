@@ -1,13 +1,71 @@
 import React, { useState } from 'react';
 import {useNavigate} from "react-router-dom";
 import { useSelector,useDispatch } from "react-redux";
+import { makeStyles } from '@material-ui/core/styles';
+import { Paper } from '@material-ui/core';
 import Axios from 'axios';
+
 import {updateUserAccount} from '../redux/userLoginSlice';
 import InputWithDebounce from '../components/InputWithDebounce';
 import {serverUrl,delay} from '../common/variables';
 import {validatePassword, validateUsername} from '../common/util';
 
+
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+      height: '280px',
+      width: '400px',
+      margin: '20px auto',
+      backgroundColor: theme.palette.primary.bg,
+      color: theme.palette.primary.contrastText,
+      boxShadow: '5px 5px 5px 0 rgba(0, 0, 0, 0.4)',
+  },
+  signuproot: {
+    height: '320px',
+    width: '400px',
+    margin: '20px auto',
+    backgroundColor: theme.palette.primary.bg,
+    color: theme.palette.primary.contrastText,
+    boxShadow: '5px 5px 5px 0 rgba(0, 0, 0, 0.4)',
+},
+  container:{
+    width:'70%',
+    margin: '0 auto'
+  },
+  h2:{
+    display:'block',
+    height:'60px',
+    fontSize:'2em'
+  },
+  input:{
+      width:'100%'
+  },
+  button: {
+      marginTop:'20px'
+  },
+  message:{
+    display:'block',
+    fontSize:'0.8em',
+    width:'300px'
+  },
+  inputGrp: {
+    display:'flex',
+    flexDirection: 'column',
+    alignItems:'baseline'
+  },
+  buttongrp:{
+    height:'25x',
+    display:'flex',
+    flexDirection:'row',
+    justifyContent:'space-around'
+  },
+}));
+
+
 function LoginPage(props) {
+  const classes = useStyles();
+  
   const [username, setUsername] = useState('tester');
   const [password, setPassword] = useState('password');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -17,8 +75,8 @@ function LoginPage(props) {
 
 
   const [message,setMessage] = useState("");
-  const [usernameValidMessage,setUsernameValidMessage] = useState(true);
-  const [passwordValidMessage,setPasswordValidMessage] = useState('');
+  const [usernameValidMessage,setUsernameValidMessage] = useState("");
+  const [passwordValidMessage,setPasswordValidMessage] = useState("");
 
   const handleUsernameChange = (value)=>{
     // setMessage("");
@@ -44,7 +102,7 @@ function LoginPage(props) {
     }).then(res=>{
       console.log("Login done!",res);
       dispatch(updateUserAccount({username:res.data.username,token:res.data.token,userid:res.data.userid}))
-      navigate('/');
+      navigate('/audiohub');
     }).catch(err=>{
       console.log("Login failed!",err);
       setMessage("Login failed!");
@@ -88,8 +146,11 @@ function LoginPage(props) {
               username:username,
               password:password
             }).then(res=>{
-              setMessage("Sign Up successful!");
-              setTimeout(()=>{setMessage("");},delay)
+              setMessage("Sign Up successful! Please login");
+              setTimeout(()=>{
+                setMessage("");
+                navigate('/');
+              },delay-2000)
               
             }).catch(err=>{
               setMessage("Sign Up failed!");
@@ -112,53 +173,66 @@ function LoginPage(props) {
   }
 
   return (
+    
     <div>
       {
       loginPageStatus?
-      <div>
-        <h2>Sign In to AudioHub</h2>
+      <Paper className={classes.root}>
+        <label className={classes.h2}>Sign In to AudioHub</label>
         <form onSubmit={handleLoginSubmit}>
-          <div>
-            <label htmlFor="username">Username or Email:</label>
-            <InputWithDebounce 
-              type="text"
-              id="username"
-              value={username}
-              onChange={handleUsernameChange} 
-              delay={500}/>
+          <div className={classes.container}>
+            <div className={classes.inputGrp}>
+              <label htmlFor="username">Username or Email:</label>
+              <InputWithDebounce 
+                className={classes.input}
+                type="text"
+                id="username"
+                value={username}
+                onChange={handleUsernameChange} 
+                delay={500}/>
+            </div>
+            <div className={classes.inputGrp}>
+              <label htmlFor="password">Password:</label>
+              <input
+                className={classes.input}
+                type="password"
+                id="password"
+                autocomplete="off"
+                value={password}
+                onChange={handlePasswordChange}
+              />
+            </div>
+
+            <label className={classes.message}>{message}</label>
+            <button className={classes.button} type="submit">Login</button>
           </div>
-          <div>
-            <label htmlFor="password">Password:</label>
-            <input
-              type="password"
-              id="password"
-              autocomplete="off"
-              value={password}
-              onChange={handlePasswordChange}
-            />
+          
+          
+          <div style={{margin:"20px auto"}}>
+            <label>New to AudioHub?  </label>
+            <button onClick={()=>handleSignUp(false)}>Sign Up</button>
           </div>
-          <button onClick={()=>handleSignUp(false)}>New to AudioHub? Sign Up</button>
-          <button type="submit">Login</button>
-          <p>{message}</p>
         </form>
-      </div>
+      </Paper>
     :
-      <div>
-        <h1>Sign Up</h1>
-        <div>
-          <div>
+    <Paper className={classes.signuproot}>
+        <label className={classes.h2}>Sign Up</label>
+        <div className={classes.container}>
+          <div className={classes.inputGrp}>
             <label htmlFor="username">User Name:</label>
             <InputWithDebounce 
+              className={classes.input}
               type="text"
               id="username"
               value={username}
               onChange={handleUsernameChange} 
               delay={500}/>
           </div>
-          <p>{usernameValidMessage}</p>
-          <div>
+          <label className={classes.message} style={{margin:"5px auto"}}>{usernameValidMessage}</label>
+          <div className={classes.inputGrp}>
             <label htmlFor="password">Password:</label>
             <input
+              className={classes.input}
               type="password"
               id="password"
               autocomplete="off"
@@ -166,21 +240,28 @@ function LoginPage(props) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          <p>{passwordValidMessage}</p>
-          <div>
+          <label className={classes.message} style={{margin:"5px auto"}}>{passwordValidMessage}</label>
+          <div className={classes.inputGrp}>
             <label htmlFor="confirmPassword">Confirm Password:</label>
             <input
+              className={classes.input}
               type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          <p>{message}</p>
-          <button onClick={handleSignupSubmit}>Sign Up</button>
-          <button onClick={()=>handleSignUp(true)}>Back to Login</button>
+          
+          <label className={classes.message} style={{margin:'10px auto'}}>{message}</label>
+
+          <div className={classes.buttongrp}>
+            <button onClick={handleSignupSubmit}>Sign Up</button>
+            <button onClick={()=>handleSignUp(true)}>Back to Login</button>
+          </div>
+
+          
         </div>
-      </div>
+      </Paper>
     }
       </div>
       

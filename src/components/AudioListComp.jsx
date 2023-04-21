@@ -2,13 +2,14 @@ import React, { useState, useEffect,useContext } from 'react';
 import MaterialTable from "material-table";
 import shouldUpdate from "recompose/shouldUpdate";
 
-import AudiofilesContext from '../hooks/AudiofilesContext';
+// import AudiofilesContext from '../hooks/AudiofilesContext';
 import { tableIcons } from '../common/variables';
 
 function AudioList(props) {
     const { useState } = React;
     const [selectedRow, setSelectedRow] = useState(null);
-    const { audioFiles,setAudioFiles } = useContext(AudiofilesContext);
+    // const { audioFiles,setAudioFiles } = useContext(AudiofilesContext);
+    const audioFiles = props.audioFiles;
 
     const [rows,setRows] = useState([]);
     const [columns,setColumns] = useState([]);
@@ -51,7 +52,6 @@ function AudioList(props) {
                             let idx = audioFiles.rows.findIndex(each => oldData._id === each._id);
                             if (idx > -1) {
                                 newRows.splice(idx, 1);
-                                // setAudioFiles(newRows);
                                 props.deleteFile(oldData, newRows);
                             }
 
