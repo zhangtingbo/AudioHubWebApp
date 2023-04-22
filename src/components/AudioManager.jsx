@@ -13,20 +13,21 @@ const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    backgroundColor: theme.palette.primary.bg,
     color: theme.palette.primary.contrastText,
 
   },
   container:{
-    width:'80%',
+    width:'100%',
     height:'100px',
-    margin: '0 auto',
+    margin: '20px auto',
     display:"flex",
     flexDirection: 'column',
+    backgroundColor:theme.palette.primary.bg,
   },
   loadercontainer:{
     display:"flex",
-    justifyContent: 'space-around',
+    justifyContent: 'center',
+    
   },
   header: {
     height: '30px',
@@ -54,7 +55,8 @@ const useStyles = makeStyles((theme) => ({
   inputGrp: {
     display:'flex',
     flexDirection: 'column',
-    alignItems:'baseline'
+    alignItems:'baseline',
+    margin:'0 5px'
   },
   buttonupload:{
     width:'120px',
@@ -99,7 +101,7 @@ function AudioManager(props) {
           catch (e) {
             console.log("Files filtering failed!")
           }
-        })
+        });
     }
     catch (err) {
       console.log(err)
@@ -191,13 +193,28 @@ function AudioManager(props) {
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
 
+  const clearInput = ()=>{
+    setSelectedFile('');
+    setNewFilename('');
+    setCategory('');
+    setDescription('');
+  }
+
   const handleFileChange = (event) => {
     setMessage('');
 
-    const selectedFile = event.target.files[0];
-    setSelectedFile(selectedFile);
-    // Set the new filename to the current filename by default
-    setNewFilename(selectedFile.name);
+    try{
+      const selectedFile = event.target.files[0];
+      console.log("selectedFile:",selectedFile)
+      if(selectedFile){
+        setSelectedFile(selectedFile);
+        // Set the new filename to the current filename by default
+        setNewFilename(selectedFile.name);
+      } 
+    }
+    catch(e){
+      console.log(e)
+    }
   };
 
   const handleFilenameChange = (event) => {
@@ -216,6 +233,15 @@ function AudioManager(props) {
 
     if(!user.userid){
       console.log("Invalid User! Please logout and login again!");
+      return;
+    }
+
+    // Check if file type is wav, mp3
+    const fileType = selectedFile?.type?.split('/')[1];
+    console.log("To be load audio fileType:",fileType)
+    if (fileType !== 'wav' && fileType !== 'mp3' && fileType !== 'ogg' 
+        && fileType !== 'mpeg' && fileType!=='x-m4a') {
+      alert('Invalid file type. Please upload a wav/mp3/ogg file.');
       return;
     }
 
@@ -238,7 +264,7 @@ function AudioManager(props) {
         setMessage('upload success！');
         setTimeout(()=>{setMessage("")},delay);
         
-        setSelectedFile("");
+        clearInput();
 
         // update Audio Table here
         try{
@@ -251,12 +277,14 @@ function AudioManager(props) {
       }).catch(err=>{
         console.error("upload fail:",err);
         setMessage('upload fail！');
+        clearInput();
         setTimeout(()=>{setMessage("")},delay)
       });
 
       
     } catch (err) {
       console.error("upload fail:",err);
+      clearInput();
       setMessage('upload fail！');
       setTimeout(()=>{setMessage("")},delay)
     }

@@ -107,6 +107,17 @@ export const validatePassword = (password) => {
     return uppercase && lowercase && number;
 }
 
+const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/;
+export const checkPasswordStrength = (password) => {
+  if (passwordRegex.test(password)) {
+    return 'strong';
+  } else if (password.length > 0) {
+    return 'weak';
+  } else {
+    return '';
+  }
+};
+
 export const validateUsername = (username) => {
     // Username must be started with Character, only includes character, number and "_"
     // the length  >= 6 and <=20

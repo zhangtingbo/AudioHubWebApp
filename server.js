@@ -236,53 +236,39 @@ app.get('/api/checkpassword/',async (req,res)=>{
     //get User from DB by username
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(401).json({ message: 'Invalid username' });
+      res.json({ message: 'Invalid username' });
     }
     const isMatch = await bcrypt.compare(tobeCheckedPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid password' });
+      res.json({ message: 'Invalid password' });
     }
 
-    return res.status(200).json({ message: 'Check password successful'});
+    res.json({ message: 'Check password successful'});
   }
   catch(error){
     console.log("Error happened when check password: ",error);
-    return res.status(500).json({ message: 'Error happened when check password '+error });
+    res.json({ message: 'Error happened when check password '+error });
   }
   
 });
 /**
  * delete user
  */
-app.delete('/api/deleteaccount/', async (req, res) => {
-  try {
-    const { userid } = req.query;
+app.delete('/api/deleteaccount/:id', async (req, res) => {
+    const userId = req.params.id;
 
-    const defaultuser = await User.findOne({ username: "administrator" }).exec();
-    if(defaultuser._id.toString()==userid){
-      console.log("Can not delete Administrator")
-      res.status(500).json({ message: 'Administrator can not be deleted' });
+    try {
+      const deletedUser = await User.findByIdAndDelete(userId);
+  
+      if (!deletedUser) {
+        return res.status(404).send({ error: 'User not found' });
+      }
+  
+      res.send(deletedUser);
+    } catch (error) {
+      console.log(error);
+      res.status(500).send({ error: 'Server error' });
     }
-    else{
-      // delete all audios which are created by this user
-      // let message = '';
-      // gfs.deleteMany({ 'metadata.userid': userid }).then(res=>{
-      //   // message ='Delete Audios Successed';
-      // }).catch(err=>{
-      //   // message ='Delete Audios failed';
-      // });
-
-      await User.findByIdAndDelete(userid).then(res=>{
-        res.status(200).json({ message: 'Delete Account Successed' });
-      }).catch(err=>{
-        console.log(err);
-        res.status(500).json({ message: 'Delete Account Failed' });
-      })
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Delete Account Failed' });
-  }
 });
 
 
@@ -312,12 +298,7 @@ app.get('/api/audiolist', async (req, res) => {
     
   const files = await gfs.find().toArray();
 
-  if(files && files.length > 0){
     return res.status(200).json({ message: 'Get audio files', files });
-  }
-  else{
-    return res.status(500).json({ message: 'Internal server error',files:[] });
-  }
   
 });
 

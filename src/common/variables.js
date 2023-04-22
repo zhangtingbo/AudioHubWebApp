@@ -22,7 +22,7 @@ import CachedIcon from '@material-ui/icons/Cached';
 
 export const serverUrl = "http://localhost:5010";
 
-export const delay = 5000;
+export const delay = 3000;
 
 export const tableIcons = {
     Delete: forwardRef((props, ref) => <DeleteIcon {...props} ref={ref} />),

@@ -8,7 +8,7 @@ import Axios from 'axios';
 import {updateUserAccount} from '../redux/userLoginSlice';
 import InputWithDebounce from '../components/InputWithDebounce';
 import {serverUrl,delay} from '../common/variables';
-import {validatePassword, validateUsername} from '../common/util';
+import {checkPasswordStrength, validateUsername} from '../common/util';
 
 
 
@@ -50,6 +50,10 @@ const useStyles = makeStyles((theme) => ({
     width:'300px',
     color:theme.palette.primary.warning
   },
+  infomessage:{
+    fontSize:'0.8em',
+    color:theme.palette.primary.lightText
+  },
   inputGrp: {
     display:'flex',
     flexDirection: 'column',
@@ -78,21 +82,25 @@ function LoginPage(props) {
   const [message,setMessage] = useState("");
   const [usernameValidMessage,setUsernameValidMessage] = useState("");
   const [passwordValidMessage,setPasswordValidMessage] = useState("");
+  const [strength,setStrenth] = useState("");
 
   const handleUsernameChange = (value)=>{
-    // setMessage("");
-    // setPasswordValidMessage("");
-    // setUsernameValidMessage("");
     setUsername(value);
-    // let length = value.split('').length;
-    // if(length<=2 && length>0){
-    //   setUsernameValidMessage("Username is too short (minimum is 2 characters).");
-    // }
   }
+
+  // handleUsernameChange
 
   const handlePasswordChange = (event) => {
     setPassword(event.target.value);
   };
+
+  const handleSignupPasswordChange = (value)=>{
+    // have to check passowrd streanth here
+    let strength = checkPasswordStrength(value);
+    setStrenth(strength);
+
+    setPassword(value);
+  }
 
   const handleLoginSubmit = (event)=>{
     event.preventDefault();
@@ -103,6 +111,9 @@ function LoginPage(props) {
     }).then(res=>{
       console.log("Login done!",res);
       dispatch(updateUserAccount({username:res.data.username,token:res.data.token,userid:res.data.userid}))
+      setPassword("");
+      setConfirmPassword("");
+      setUsername("");
       navigate('/audiohub');
     }).catch(err=>{
       console.log("Login failed!",err);
@@ -115,11 +126,13 @@ function LoginPage(props) {
   const [loginPageStatus,setLoginPageStatus] = useState(true);  // true:login  false:sign up
   const handleSignUp = (value)=>{
     setLoginPageStatus(value);
-    setPassword('');
+    setPassword("");
+    setConfirmPassword("");
+    setUsername("");
   }
 
   const handleSignupSubmit = (event)=>{
-    console.log("handleSignupSubmit:",event)
+
     if(!username || !password || !confirmPassword){
       setMessage("Password or Username can't be empty!");
       setTimeout(()=>{setMessage("");},delay)
@@ -128,8 +141,9 @@ function LoginPage(props) {
       setMessage("Password was set inconsistently!");
       setTimeout(()=>{setMessage("");},delay)
     }
-    else if(!validatePassword(password)){
-      setPasswordValidMessage(password.length<8?"Minimum length is 8 characters.":"Must includes 1 Uppercase character, 1 Lowercase character and 1 number");
+    else if(strength==='' || strength==='weak'){
+      setStrenth("");
+      setPasswordValidMessage("Minimum length is 8 characters, includes 1 Uppercase, 1 Lowercase and 1 number");
       setTimeout(()=>{
         setMessage("");
         setPasswordValidMessage("");
@@ -139,7 +153,8 @@ function LoginPage(props) {
       if(validateUsername(username)){
         Axios.get(serverUrl+"/api/checkusername/"+username).then(res=>{
           if(res.data.existingUser){
-            setUsernameValidMessage("Username is already taken.");
+            setUsernameValidMessage("Username has already been taken.");
+            setTimeout(()=>{setUsernameValidMessage("");;},delay)
           }
           else{
             setUsernameValidMessage("");
@@ -147,11 +162,10 @@ function LoginPage(props) {
               username:username,
               password:password
             }).then(res=>{
-              setMessage("Sign Up successful! Please login");
-              setTimeout(()=>{
-                setMessage("");
-                navigate('/');
-              },delay-2000)
+              setMessage("Sign Up Successed!");
+              setTimeout(()=>{setMessage("");},delay)
+
+              Logout();
               
             }).catch(err=>{
               setMessage("Sign Up failed!");
@@ -171,6 +185,28 @@ function LoginPage(props) {
         setTimeout(()=>{setMessage("");},delay);
       }
     }
+  }
+
+  const Logout = ()=>{
+    console.log("Logout!")
+    try{
+      Axios.post(serverUrl+"/api/logout",{
+      }).then(res=>{
+        console.log("Logout successful!",res);
+        // reset User Accout Redux Store here, to clear it
+        dispatch(updateUserAccount({username:'',token:'',userid:''}));
+  
+        setLoginPageStatus(true);
+        setPassword("");
+        setConfirmPassword("");
+      }).catch(err=>{
+        console.log("Logout failed!",err);
+      });
+    }
+    catch(e){
+
+    }
+    
   }
 
   return (
@@ -198,7 +234,6 @@ function LoginPage(props) {
                 className={classes.input}
                 type="password"
                 id="password"
-                autocomplete="off"
                 value={password}
                 onChange={handlePasswordChange}
               />
@@ -228,18 +263,20 @@ function LoginPage(props) {
               value={username}
               onChange={handleUsernameChange} 
               delay={500}/>
+            <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>
           </div>
           <label className={classes.message} style={{margin:"5px auto"}}>{usernameValidMessage}</label>
           <div className={classes.inputGrp}>
             <label htmlFor="password">Password:</label>
-            <input
+            <InputWithDebounce 
               className={classes.input}
               type="password"
               id="password"
-              autocomplete="off"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handleSignupPasswordChange}
+              delay={500}
             />
+            <label className={`password-strength ${strength}`}></label>
           </div>
           <label className={classes.message} style={{margin:"5px auto"}}>{passwordValidMessage}</label>
           <div className={classes.inputGrp}>

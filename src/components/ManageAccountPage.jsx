@@ -7,11 +7,12 @@ import { Paper } from '@material-ui/core';
 
 import {getUserAccount,updateUserAccount} from '../redux/userLoginSlice';
 import {serverUrl,delay} from '../common/variables';
-import {validatePassword, validateUsername} from '../common/util';
+import {validatePassword, validateUsername,checkPasswordStrength} from '../common/util';
+import InputWithDebounce from '../components/InputWithDebounce';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-      height: '420px',
+      height: '380px',
       width: '400px',
       margin: '20px auto',
       backgroundColor: theme.palette.primary.bg,
@@ -20,11 +21,12 @@ const useStyles = makeStyles((theme) => ({
   },
   container:{
     width:'240px',
-    margin: '0 auto'
+    margin: '0 auto',
+    padding:'20px'
   },
   h2:{
     display:'block',
-    height:'60px',
+    height:'40px',
     fontSize:'2em'
   },
   h3:{
@@ -67,78 +69,6 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-function PasswordDialog(props) {
-  const classes = useStyles();
-
-  const [password, setPassword] = useState('');
-  const [message,setMessage] = useState('');
-
-  const handleInputChange = (event) => {
-    setPassword(event.target.value);
-  };
-
-  const handleConfirmClick = async () => {
-    console.log("Make a request to ask if password is correct");
-    const params = new URLSearchParams();
-    params.append('password', password);
-    params.append('username', props.user.username); //
-
-    try{
-      await Axios.get(serverUrl+"/api/checkpassword?"+params.toString())
-      .then(async res => {
-        setMessage("Check password successed! Deleting your account...");
-
-        const deleteParams = new URLSearchParams();
-        deleteParams.append('userid',props.user.userid)
-        await Axios.delete(serverUrl+"/api/deleteaccount?"+deleteParams.toString())
-        .then(res=>{
-          props.onConfirm(password);
-        }).catch(err=>{
-          setMessage(err.response.data.message);
-          setTimeout(()=>{
-            setMessage("");
-            props.onCancel();
-          },5000);
-        })
-      }).catch(err=>{
-        setMessage(err.response.data.message);
-        setTimeout(()=>{
-          setMessage("");
-          props.onCancel();
-        },5000);
-      })
-    }
-    catch(err){
-      console.log(err)
-      setTimeout(()=>{
-        setMessage("");
-        props.onCancel();
-      },5000);
-    }
-
-  };
-
-  const handleCancelClick = () => {
-    props.onCancel();
-  };
-
-  return (
-    <div className={classes.container}>
-      <div className={classes.inputGrp}>
-        <label >Please input Password：</label>
-        
-        <div className={classes.withButton}>
-        <input type="password" value={password} onChange={handleInputChange} />
-        <button onClick={handleConfirmClick}>Confirm</button>
-          <button onClick={handleCancelClick}>Cancel</button>
-        </div>
-      </div>
-
-      <p>{message}</p>
-    </div>
-  );
-}
-
 function ManageAccountPage(props){
   const classes = useStyles();
   const navigate = useNavigate();
@@ -150,9 +80,8 @@ function ManageAccountPage(props){
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [showDialog, setShowDialog] = useState(false);
   const [message,setMessage] = useState('');
-  const [namingMessage,setNamingMessage] = useState('');
+  const [strength,setStrenth] = useState("");
 
   const handleUsernameUpdate = async ()=>{
     if(validateUsername(newusername)){
@@ -175,7 +104,7 @@ function ManageAccountPage(props){
             setTimeout(()=>{
               setMessage("");
               Logout();
-            },delay-3000)
+            },2000)
             
           }).catch(e=>{
             console.log(e)
@@ -187,12 +116,22 @@ function ManageAccountPage(props){
     }
     else{
       setMessage("Please input valid username!");
-      setNamingMessage("Include 1 uppercase,1 lowercase and 1 number, >=6 and <=20");
       setTimeout(()=>{
         setMessage("");
-        setNamingMessage("");
       },delay);
     }
+  }
+
+  const handlePasswordChange = (value)=>{
+    // have to check passowrd streanth here
+    let strength = checkPasswordStrength(value);
+    setStrenth(strength);
+
+    setPassword(value);
+  }
+
+  const handleNewUsernameChange = (value)=>{
+    setNewusername(value);
   }
 
   const handlePasswordUpdate=()=>{
@@ -217,7 +156,7 @@ function ManageAccountPage(props){
         setTimeout(()=>{
           setMessage("");
           Logout();
-        },delay);
+        },2000);
 
       }).catch(e=>{
         console.log(e)
@@ -228,40 +167,54 @@ function ManageAccountPage(props){
   }
 
   const handleCancel = (e)=>{
-    e.preventDefault();
     navigate('/audiohub');
   }
 
   const handleDeleteAccount = (e)=>{
-    setShowDialog(true);
-    // 
+    // setShowDialog(true);
+    try{
+      
+      if(user.username === "administrator")
+      {
+        setMessage("Can't delete administrator");
+      }
+      else{
+        Axios.delete(serverUrl+"/api/deleteaccount/"+user.userid)
+          .then(res=>{
+            Logout();
+          }).catch(err=>{
+            setMessage(err.response.data.message);
+            setTimeout(()=>{
+              setMessage("");
+            },5000);
+          })
+      }
+      
+    }
+    catch(e){
+
+    }
+
   }
 
-  const handleConfirmPassword = (password) => {
-    // setPassword(password);
-    setShowDialog(false);
-    Logout();
-  };
-
-  const handleCancelPassword = () => {
-    setShowDialog(false);
-  };
-
-  const handleOpenDialog = () => {
-    setShowDialog(true);
-  };
-
   const Logout = ()=>{
-    Axios.post(serverUrl+"/api/logout",{
-    }).then(res=>{
-      console.log("Logout successful!",res);
-      // reset User Accout Redux Store here, to clear it
-      dispatch(updateUserAccount({username:'',token:'',userid:''}));
+    console.log("Logout!")
+    try{
+      Axios.post(serverUrl+"/api/logout",{
+      }).then(res=>{
+        console.log("Logout successful!",res);
+        // reset User Accout Redux Store here, to clear it
+        dispatch(updateUserAccount({username:'',token:'',userid:''}));
+  
+        navigate('/');
+      }).catch(err=>{
+        console.log("Logout failed!",err);
+      });
+    }
+    catch(e){
 
-      navigate('/');
-    }).catch(err=>{
-      console.log("Internal server error!",err);
-    });
+    }
+    
   }
 
   return (
@@ -272,25 +225,36 @@ function ManageAccountPage(props){
         <div className={classes.inputGrp}>
           <label htmlFor="newusername">Update New User Name:</label>
           <div className={classes.withButton}>
-            <input
+            {/* <input
               type="text"
               id="newusername"
               value={newusername}
               onChange={(e) => setNewusername(e.target.value)}
+            /> */}
+            <InputWithDebounce 
+              className={classes.input}
+              type="text"
+              id="newusername"
+              value={newusername}
+              onChange={handleNewUsernameChange}
+              delay={500}
             />
             <button onClick={handleUsernameUpdate}>Confirm</button>
           </div>
-          <label className={classes.infomessage}>{namingMessage}</label>
+          <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>
         </div> 
         <div style={{marginTop:'10px'}}>
           <div className={classes.inputGrp}>
             <label htmlFor="password">New Password:</label>
-            <input
+            <InputWithDebounce 
+              className={classes.input}
               type="password"
               id="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={handlePasswordChange}
+              delay={500}
             />
+            <label className={`password-strength ${strength}`}></label>
           </div>
           <div className={classes.inputGrp}>
             <label htmlFor="confirmPassword">Confirm New Password:</label>
@@ -314,10 +278,6 @@ function ManageAccountPage(props){
           <button onClick={handleCancel}>Cancel</button>
         </div>
 
-        {showDialog && (
-          <PasswordDialog onConfirm={handleConfirmPassword} onCancel={handleCancelPassword} 
-            user={user}/>
-        )}
       </div>
     </Paper>
   );

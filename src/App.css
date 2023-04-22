@@ -42,3 +42,22 @@
   height: 200px;
   background-color: azure;
 }
+
+.password-strength {
+  color: rgb(0, 128, 0); /* 设置为绿色 */
+}
+
+.password-strength.strong::before {
+  content: "strong";
+  color: green;
+}
+
+.password-strength.medium::before {
+  content: "medium";
+  color: yellow;
+}
+
+.password-strength.weak::before {
+  content: "weak";
+  color: red;
+}
