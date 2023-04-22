@@ -20,7 +20,7 @@ import PreviousPage from '@material-ui/icons/ChevronLeft';
 import NextPage from '@material-ui/icons/ChevronRight';
 import CachedIcon from '@material-ui/icons/Cached';
 
-export const serverUrl = "http://localhost:5000";
+export const serverUrl = "http://localhost:5010";
 
 export const delay = 5000;
 
