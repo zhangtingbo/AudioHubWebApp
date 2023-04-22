@@ -22,9 +22,9 @@ app.use(methodOverride('_method'));
 app.use(express.json())
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.use(express.static('./downloads'));
-// serve up production assets
-// app.use(express.static('./public'));
+app.use(express.static('./downloads')); // for audio download
+app.use(express.static('./public'));
+// app.use(express.static(path.join(__dirname, './public')));
 // let the react app to handle any unknown routes 
 // serve up the index.html if express does'nt recognize the route
 // const path = require('path');
@@ -34,6 +34,7 @@ app.get('/', (req, res) => {
 
 // if not in production use the port 5000
 const PORT = process.env.PORT || 5000;
+const hostUrl = "http://localhost:"+PORT;
 console.log('server started on port:', PORT);
 app.listen(PORT);
 
@@ -327,38 +328,38 @@ app.get('/api/audiolist', async (req, res) => {
  * dowload audio file by id
  */
 app.get('/api/loadaudio', (req, res) => {
-    try{
-      const id = req.query.id;
-      const filename = req.query.filename;
-      const contentType = req.query.contentType;
+  try{
+    const id = req.query.id;
+    const filename = req.query.filename;
+    const contentType = req.query.contentType;
 
-      console.log("Download start:",id,filename,contentType)
-      const obj_id = new mongoose.Types.ObjectId(req.query.id);
+    console.log("Download start:",id,filename,contentType)
+    const obj_id = new mongoose.Types.ObjectId(req.query.id);
 
-      const downloadStream = gfs.openDownloadStream(obj_id);
-      // const downloadfilename = req.params.filename;
-      // console.log(downloadfilename)
-      const rs = fs.createWriteStream('./downloads/'+filename);
-      // downloadStream.pipe(writestream);
+    const downloadStream = gfs.openDownloadStream(obj_id);
+    // const downloadfilename = req.params.filename;
+    console.log("Audio file downloads path:",path.join(__dirname, "downloads/"+filename))
+    const rs = fs.createWriteStream(path.join(__dirname, "downloads/"+filename));
+    // downloadStream.pipe(writestream);
 
-      downloadStream.on('error', () => {
-        res.status(404).send('Can not find the file');
-      });
+    downloadStream.on('error', () => {
+      res.status(404).send('Can not find the file');
+    });
 
-      downloadStream.on('data', chunk => {
-        rs.write(chunk);
-      });
+    downloadStream.on('data', chunk => {
+      rs.write(chunk);
+    });
 
-      downloadStream.on('end', () => {
-        console.log("Download done::")
-        rs.end();
-        const fileUrl = `http://localhost:5000/${filename}`;
-        res.status(200).json({message:"Download successed!",fileUrl,id})
-      });
-    }
-    catch(e){
+    downloadStream.on('end', () => {
+      console.log("Download done::")
+      rs.end();
+      const fileUrl = `${hostUrl}/${filename}`;
+      res.status(200).json({message:"Download successed!",fileUrl,id})
+    });
+  }
+  catch(e){
 
-    }
+  }
 });
 
 /**
