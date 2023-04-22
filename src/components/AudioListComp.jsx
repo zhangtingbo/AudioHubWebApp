@@ -2,21 +2,18 @@ import React, { useState, useEffect,useContext } from 'react';
 import MaterialTable from "material-table";
 import shouldUpdate from "recompose/shouldUpdate";
 
-// import AudiofilesContext from '../hooks/AudiofilesContext';
 import { tableIcons } from '../common/variables';
 
 function AudioList(props) {
     const { useState } = React;
     const [selectedRow, setSelectedRow] = useState(null);
-    // const { audioFiles,setAudioFiles } = useContext(AudiofilesContext);
-    const audioFiles = props.audioFiles;
 
-    const [rows,setRows] = useState([]);
-    const [columns,setColumns] = useState([]);
-    useEffect(()=>{
-        setRows(audioFiles.rows);
-        setColumns(audioFiles.columns);
-    },[audioFiles,props.toUpdate])
+    // const [rows,setRows] = useState([]);
+    // const [columns,setColumns] = useState([]);
+    // useEffect(()=>{
+    //     setRows(props.audioFiles.rows);
+    //     setColumns(props.audioFiles.columns);
+    // },[props.audioFiles,props.toUpdate])
     
     const toDownload=async (_,row)=>{
         props.downloadFile(row);
@@ -25,8 +22,8 @@ function AudioList(props) {
     return (
         <MaterialTable
             title=""
-            columns={columns}
-            data={rows}
+            columns={props.audioFiles.columns}
+            data={props.audioFiles.rows}
             icons={tableIcons}
             onRowClick={((evt, selectedRow) => setSelectedRow(selectedRow.tableData.id))}
             options={{
@@ -39,7 +36,7 @@ function AudioList(props) {
                 [
                 rowData => ({
                     icon: tableIcons.Download,
-                    tooltip: 'Download',
+                    tooltip: 'Load Audio',
                     onClick: (event,rowData) =>toDownload(event,rowData)
                 })
                 ]
@@ -48,8 +45,8 @@ function AudioList(props) {
                 onRowDelete: oldData =>
                     new Promise((resolve) => {
                         setTimeout(() => {
-                            const newRows = audioFiles.rows;
-                            let idx = audioFiles.rows.findIndex(each => oldData._id === each._id);
+                            const newRows = props.audioFiles.rows;
+                            let idx = props.audioFiles.rows.findIndex(each => oldData._id === each._id);
                             if (idx > -1) {
                                 newRows.splice(idx, 1);
                                 props.deleteFile(oldData, newRows);

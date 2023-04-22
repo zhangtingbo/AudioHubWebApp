@@ -36,7 +36,12 @@ const useStyles = makeStyles((theme) => ({
     fontSize:'1em'
   },
   message:{
-    fontSize:'0.8em'
+    fontSize:'1em',
+    color:theme.palette.primary.warning
+  },
+  infomessage:{
+    fontSize:'0.8em',
+    color:theme.palette.primary.lightText
   },
   input:{
       width:'100%'
@@ -66,7 +71,7 @@ function PasswordDialog(props) {
   const classes = useStyles();
 
   const [password, setPassword] = useState('');
-  const [message,setMessage] = useState('fdf');
+  const [message,setMessage] = useState('');
 
   const handleInputChange = (event) => {
     setPassword(event.target.value);
@@ -89,14 +94,14 @@ function PasswordDialog(props) {
         .then(res=>{
           props.onConfirm(password);
         }).catch(err=>{
-          setMessage("Delete Account failed! ");
+          setMessage(err.response.data.message);
           setTimeout(()=>{
             setMessage("");
             props.onCancel();
           },5000);
         })
       }).catch(err=>{
-        setMessage("Check password failed! ");
+        setMessage(err.response.data.message);
         setTimeout(()=>{
           setMessage("");
           props.onCancel();
@@ -145,9 +150,9 @@ function ManageAccountPage(props){
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [showDialog, setShowDialog] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
   const [message,setMessage] = useState('');
-  // const [passwordValidMessage,setPasswordValidMessage] = useState('');
+  const [namingMessage,setNamingMessage] = useState('');
 
   const handleUsernameUpdate = async ()=>{
     if(validateUsername(newusername)){
@@ -170,7 +175,7 @@ function ManageAccountPage(props){
             setTimeout(()=>{
               setMessage("");
               Logout();
-            },delay)
+            },delay-3000)
             
           }).catch(e=>{
             console.log(e)
@@ -182,7 +187,11 @@ function ManageAccountPage(props){
     }
     else{
       setMessage("Please input valid username!");
-      setTimeout(()=>{setMessage("");},delay);
+      setNamingMessage("Include 1 uppercase,1 lowercase and 1 number, >=6 and <=20");
+      setTimeout(()=>{
+        setMessage("");
+        setNamingMessage("");
+      },delay);
     }
   }
 
@@ -271,7 +280,8 @@ function ManageAccountPage(props){
             />
             <button onClick={handleUsernameUpdate}>Confirm</button>
           </div>
-        </div>
+          <label className={classes.infomessage}>{namingMessage}</label>
+        </div> 
         <div style={{marginTop:'10px'}}>
           <div className={classes.inputGrp}>
             <label htmlFor="password">New Password:</label>

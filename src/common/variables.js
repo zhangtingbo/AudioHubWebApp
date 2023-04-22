@@ -18,7 +18,7 @@ import FirstPage from '@material-ui/icons/FirstPage';
 import LastPage from '@material-ui/icons/LastPage';
 import PreviousPage from '@material-ui/icons/ChevronLeft';
 import NextPage from '@material-ui/icons/ChevronRight';
-import GetAppIcon from '@material-ui/icons/GetApp';
+import CachedIcon from '@material-ui/icons/Cached';
 
 export const serverUrl = "http://localhost:5000";
 
@@ -44,6 +44,6 @@ export const tableIcons = {
     LastPage:forwardRef((props,ref)=><LastPage {...props} ref={ref}/>),
     PreviousPage:forwardRef((props,ref)=><PreviousPage {...props} ref={ref}/>),
     NextPage:forwardRef((props,ref)=><NextPage {...props} ref={ref}/>),
-    Download:forwardRef((props,ref)=><GetAppIcon {...props} ref={ref}/>)
+    Download:forwardRef((props,ref)=><CachedIcon {...props} ref={ref}/>)
 };
 

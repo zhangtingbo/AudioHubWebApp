@@ -17,6 +17,17 @@ const useStyles = makeStyles((theme) => ({
     color: theme.palette.primary.contrastText,
 
   },
+  container:{
+    width:'80%',
+    height:'100px',
+    margin: '0 auto',
+    display:"flex",
+    flexDirection: 'column',
+  },
+  loadercontainer:{
+    display:"flex",
+    justifyContent: 'space-around',
+  },
   header: {
     height: '30px',
     display: 'flex',
@@ -31,9 +42,23 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'row',
     justifyContent: 'space-between'
   },
+  h3:{
+    display:'block',
+    fontSize:'1.5em',
+    marginLeft:'10px'
+  },
   username: {
     fontSize: '24px',
     paddingLeft: '20px'
+  },
+  inputGrp: {
+    display:'flex',
+    flexDirection: 'column',
+    alignItems:'baseline'
+  },
+  buttonupload:{
+    width:'120px',
+    alignSelf:'center'
   }
 }));
 
@@ -44,31 +69,32 @@ function AudioManager(props) {
   const navigate = useNavigate();
   let user = useSelector(getUserAccount);
 
-  const [originalFiles, setOriginalFile] = useState([]);
   const [audioFiles, setAudioFiles] = useState({ rows: [], columns: []});
   const [updateAudioList, setUpdateAudioList] = useState(0);
-
-  
+  const [audioURL,setAudioURL] = useState({});
 
   useEffect(() => {
     // update Audio File here
     getAudioFiles();
   }, []);
 
-  const getAudioFiles = async () => {
+  const getAudioFiles = async (url,id) => {
     console.log("Getting Audio files from service...")
     try {
-      await axios.get(serverUrl + "/api/audio")
+      await axios.get(serverUrl + "/api/audiolist")
         .then(res => {
           const filesData = res.data.files;
 
           // but need to filter by userid
           try {
             let filteredFiles = filterByUserid({ filesData, userid: user.userid });
-            setOriginalFile(filteredFiles);
-            // format files list to feed Material-table
-            let formatedList = formatAudioFiles(filteredFiles);
+            let formatedList = formatAudioFiles(filteredFiles,audioURL);
+            
             setAudioFiles(formatedList);
+
+            setUpdateAudioList(prev => {
+              return (prev + 1) % 10;
+            })
           }
           catch (e) {
             console.log("Files filtering failed!")
@@ -83,15 +109,18 @@ function AudioManager(props) {
   const onDeleteAudio = async (toBeDelete, newRows) => {
     // console.log(toBeDelete, newRows)
     try {
-      await axios.delete(serverUrl + "/api/audio/" + toBeDelete._id)
+      await axios.delete(serverUrl + "/api/audiodelete/" + toBeDelete._id)
         .then(res => {
           // but need to filter by userid
           try {
             console.log("Delete audio successed!", res)
             try {
-              let filteredFiles = filterByUserid({ filesData: res.data.files, userid: user.userid });
-              let formatedList = formatAudioFiles(filteredFiles);
-              setAudioFiles(formatedList);
+              getAudioFiles();
+              setAudioURL(prev=>{
+                if(prev[toBeDelete._id])delete prev[toBeDelete._id];
+                return prev;
+              });
+              console.log("after getAudioFiles: audioFiles:",audioFiles)
             }
             catch (e) {
               console.log("Files filtering failed!")
@@ -109,11 +138,6 @@ function AudioManager(props) {
 
   const toDownload = (row) => {
     console.log("toDownload:", row)
-    // const formData = new FormData();
-
-    // formData.append('id', row._id);
-    // formData.append('filename', user.filename);
-    // formData.append('contentType', user.contentType);
 
     const params = new URLSearchParams();
     params.append('id', row._id);
@@ -122,24 +146,17 @@ function AudioManager(props) {
 
     try {
       axios.get(serverUrl + "/api/loadaudio?" + params.toString())
-        .then(res => {
+        .then(async res => {
           const fileUrl = res.data.fileUrl;
           const id = res.data.id;
           // update audio list here
-          setOriginalFile(prev => {
-            prev.forEach(each => {
-              if (each._id === id) {
-                each.metadata.url = fileUrl;
-              }
-            });
+          console.log("loading done, get URL:",fileUrl,id)
+          setAudioURL(prev=>{
+            if(!prev[id])prev[id]=fileUrl;
             return prev;
-          })
-          let formatedList = formatAudioFiles(originalFiles);
-          setAudioFiles(formatedList);
+          });
 
-          setUpdateAudioList(prev => {
-            return (prev + 1) % 10;
-          })
+          getAudioFiles();
         })
     }
     catch (err) {
@@ -216,7 +233,7 @@ function AudioManager(props) {
     }
 
     try {
-      axios.post(serverUrl+'/api/audio', formData, config).then(res=>{
+      axios.post(serverUrl+'/api/audioupload', formData, config).then(res=>{
 
         setMessage('upload success！');
         setTimeout(()=>{setMessage("")},delay);
@@ -225,9 +242,7 @@ function AudioManager(props) {
 
         // update Audio Table here
         try{
-          let filteredFiles = filterByUserid({filesData:res.data.files, userid:user.userid});
-          let formated = formatAudioFiles(filteredFiles);
-          setAudioFiles(formated);
+          getAudioFiles();
         }
         catch(e){
           console.log(e);
@@ -249,10 +264,10 @@ function AudioManager(props) {
 
   return (
     <div className={classes.root}>
-      {/* <h1>Audio Hub</h1> */}
+      <h1>Audio Hub</h1>
       {/* <AudiofilesContext.Provider value={{ audioFiles, setAudioFiles }}> */}
         <div className={classes.header}>
-          <label>{user.username}</label>
+          <label className={classes.h3}>{user.username}</label>
           <div className={classes.buttongrp}>
             <button onClick={handleManageAccount}>Manage Account</button>
             <button onClick={handleLogout}>Logout</button>
@@ -261,30 +276,33 @@ function AudioManager(props) {
 
         {/* <FileUpload /> */}
         <div className={classes.container}>
-          <div className={classes.inputGrp}>
-            <label htmlFor="file">Select file:</label>
-            <input className={classes.input} type="file" onChange={handleFileChange} />
+          <div className={classes.loadercontainer}>
+            <div className={classes.inputGrp}>
+              <label htmlFor="file">Select file:</label>
+              <input className={classes.input} type="file" onChange={handleFileChange} />
+            </div>
+            <div className={classes.inputGrp} >
+              <label htmlFor="filename">Filename:</label>
+              <input className={classes.input} type="text" id="filename" value={newFilename} 
+                onChange={handleFilenameChange} />
+            </div>
+            <div className={classes.inputGrp}>
+              <label htmlFor="category">Category:</label>
+              <select className={classes.input} id="category" value={category} 
+                onChange={handleCategoryChange}>
+                <option value="">--Select category--</option>
+                <option value="music">Music</option>
+                <option value="podcast">Podcast</option>
+                <option value="audiobook">Audiobook</option>
+              </select>
+            </div>
+            <div className={classes.inputGrp}>
+              <label htmlFor="description">Description:</label>
+              <textarea className={classes.input} id="description" value={description} 
+                onChange={handleDescriptionChange} />
+            </div>
           </div>
-          <div className={classes.inputGrp} >
-            <label htmlFor="filename">Filename:</label>
-            <input className={classes.input} type="text" id="filename" value={newFilename} 
-              onChange={handleFilenameChange} />
-          </div>
-          <div className={classes.inputGrp}>
-            <label htmlFor="category">Category:</label>
-            <select className={classes.input} id="category" value={category} 
-              onChange={handleCategoryChange}>
-              <option value="">--Select category--</option>
-              <option value="music">Music</option>
-              <option value="podcast">Podcast</option>
-              <option value="audiobook">Audiobook</option>
-            </select>
-          </div>
-          <div className={classes.inputGrp}>
-            <label htmlFor="description">Description:</label>
-            <textarea className={classes.input} id="description" value={description} 
-              onChange={handleDescriptionChange} />
-          </div>
+          
           <div className={classes.buttonupload}>
             <button disabled={!selectedFile} onClick={handleUpload}>Upload</button>
             <p>{message}</p>

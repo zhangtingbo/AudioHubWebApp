@@ -87,6 +87,7 @@ const storage = new GridFsStorage({
     });
   }
 });
+const upload = multer({ storage });
 
 /**
  * User Login services
@@ -95,6 +96,21 @@ const User = mongoose.model('users', new mongoose.Schema({
   username: { type: String, required: true },
   password: { type: String, required: true },
 }));
+const createDefaultUser = async ()=>{
+  const user = await User.findOne({ username: 'administrator' }).exec();
+  if(!user){
+    bcrypt.genSalt().then(salt=>{
+      bcrypt.hash('1Password', salt)
+      .then(hashedPassword=>{
+        const defaultUser = new User({ username: 'administrator', password: hashedPassword});
+        defaultUser.save()
+          .then(() => { console.log('Default user created'); })
+          .catch(err => console.error('Error creating default user', err));
+      })
+    })
+  }
+}
+createDefaultUser();
 
 app.get('/api/checkusername/:username',async (req,res)=>{
   const { username } = req.params;
@@ -116,6 +132,7 @@ app.post('/api/signup', async (req, res) => {
   const { username, password } = req.body;
   
   const existingUser = await User.findOne({ username }).exec();
+  console.log("existingUser:",existingUser)
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
     }
@@ -243,16 +260,30 @@ app.delete('/api/deleteaccount/', async (req, res) => {
   try {
     const { userid } = req.query;
 
-    await User.findByIdAndDelete(userid).then(res=>{
-      return res.status(200).json({ message: 'Delete Account Successed' });
-    }).catch(err=>{
-      console.log(err);
-      return res.status(500).json({ message: 'Delete Account Failed' });
-    })
-    
+    const defaultuser = await User.findOne({ username: "administrator" }).exec();
+    if(defaultuser._id.toString()==userid){
+      console.log("Can not delete Administrator")
+      res.status(500).json({ message: 'Administrator can not be deleted' });
+    }
+    else{
+      // delete all audios which are created by this user
+      // let message = '';
+      // gfs.deleteMany({ 'metadata.userid': userid }).then(res=>{
+      //   // message ='Delete Audios Successed';
+      // }).catch(err=>{
+      //   // message ='Delete Audios failed';
+      // });
+
+      await User.findByIdAndDelete(userid).then(res=>{
+        res.status(200).json({ message: 'Delete Account Successed' });
+      }).catch(err=>{
+        console.log(err);
+        res.status(500).json({ message: 'Delete Account Failed' });
+      })
+    }
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ message: 'Delete Account Failed' });
+    res.status(500).json({ message: 'Delete Account Failed' });
   }
 });
 
@@ -261,42 +292,26 @@ app.delete('/api/deleteaccount/', async (req, res) => {
 /**
  * Audio upload/download services
  */
-// Create storage engine
-
-
-
-const upload = multer({ storage });
-
 // @route POST /upload
 // @desc  Uploads file to DB
-app.post('/api/audio', upload.single('file'), async (req, res) => {
+app.post('/api/audioupload', upload.single('file'), async (req, res) => {
 
-  if(gfs){
-    const files = await gfs.find().toArray();
-
-    // res.redirect('/');
-
-    return res.status(200).json({ message: 'Get all audio files', files });
+  try{
+    if(gfs){
+      const files = await gfs.find().toArray();
+  
+      return res.status(200).json({ message: 'Get all audio files', files });
+    }
   }
-    
-
-    // return res.status(200).json({ message: 'Upload Audio File done'});
-  });
-
-
-app.get('/', (req, res) => {
-    res.send("my app")
+  catch(e){
+    return res.status(500).json({ message: 'Server Error happens' });
+  }
 });
 
 // @route GET /files
 // @desc  Display all files in JSON
-app.get('/api/audio', async (req, res) => {
+app.get('/api/audiolist', async (req, res) => {
     
-  // const id = new mongoose.Types.ObjectId("643e8079461efa3a3b4e9b31");
-  // const filename = id;
-  //   gfs.openDownloadStream(id).
-  //     pipe(fs.createWriteStream('./downloads/'+filename+'.wav'))
-
   const files = await gfs.find().toArray();
 
   if(files && files.length > 0){
@@ -339,20 +354,17 @@ app.get('/api/loadaudio', (req, res) => {
         rs.end();
         const fileUrl = `http://localhost:5000/${filename}`;
         res.status(200).json({message:"Download successed!",fileUrl,id})
-       
       });
     }
     catch(e){
 
     }
-  
-
 });
 
 /**
  * delete Audio file, can be done by user who uploads this audio
  */
-app.delete('/api/audio/:id', async (req, res) => {
+app.delete('/api/audiodelete/:id', async (req, res) => {
   try {
     const obj_id = new mongoose.Types.ObjectId(req.params.id);
     // console.log(obj_id)

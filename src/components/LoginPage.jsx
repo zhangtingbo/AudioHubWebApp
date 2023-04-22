@@ -47,7 +47,8 @@ const useStyles = makeStyles((theme) => ({
   message:{
     display:'block',
     fontSize:'0.8em',
-    width:'300px'
+    width:'300px',
+    color:theme.palette.primary.warning
   },
   inputGrp: {
     display:'flex',
