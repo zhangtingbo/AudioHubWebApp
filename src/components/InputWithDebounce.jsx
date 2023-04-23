@@ -13,7 +13,7 @@ function InputWithDebounce({ onChange, delay, ...props }) {
       setInputValue(e.target.value);
     };
   
-    return <input {...props} value={inputValue} onChange={handleInputChange} />;
+    return <input {...props} value={inputValue} onChange={handleInputChange} autocomplete='off'/>;
 }
 
 export default InputWithDebounce;

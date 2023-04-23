@@ -80,8 +80,8 @@ const useStyles = makeStyles((theme) => ({
 function LoginPage(props) {
   const classes = useStyles();
   
-  const [username, setUsername] = useState('tester');
-  const [password, setPassword] = useState('password');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const navigate = useNavigate();
@@ -253,6 +253,7 @@ function LoginPage(props) {
                 className={classes.input}
                 type="password"
                 id="password"
+                autocomplete='off'
                 value={password}
                 onChange={handlePasswordChange}
               />
@@ -312,6 +313,7 @@ function LoginPage(props) {
               className={classes.input}
               type="password"
               id="confirmPassword"
+              autocomplete='off'
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />

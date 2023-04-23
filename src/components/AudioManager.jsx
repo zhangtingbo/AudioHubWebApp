@@ -240,8 +240,8 @@ function AudioManager(props) {
     const fileType = selectedFile?.type?.split('/')[1];
     console.log("To be load audio fileType:",fileType)
     if (fileType !== 'wav' && fileType !== 'mp3' && fileType !== 'ogg' 
-        && fileType !== 'mpeg' && fileType!=='x-m4a') {
-      alert('Invalid file type. Please upload a wav/mp3/ogg file.');
+        && fileType !== 'mpeg' && fileType!=='x-m4a' && fileType!=='flac') {
+      alert('Invalid file type. Please upload a wav/mp3/ogg/flac file.');
       return;
     }
 
