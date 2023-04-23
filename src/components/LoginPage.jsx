@@ -65,6 +65,15 @@ const useStyles = makeStyles((theme) => ({
     flexDirection:'row',
     justifyContent:'space-around'
   },
+  infoButton:{
+    borderRadius: '50%',
+    border: 'none',
+    width:'25px',
+    height:'25px',
+    margin:'5px',
+    color:theme.palette.primary.contrastText,
+    backgroundColor:theme.palette.primary.lightbg
+  },
 }));
 
 
@@ -83,6 +92,8 @@ function LoginPage(props) {
   const [usernameValidMessage,setUsernameValidMessage] = useState("");
   const [passwordValidMessage,setPasswordValidMessage] = useState("");
   const [strength,setStrenth] = useState("");
+
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleUsernameChange = (value)=>{
     setUsername(value);
@@ -209,6 +220,14 @@ function LoginPage(props) {
     
   }
 
+  const handleMouseOver = ()=>{
+    setShowTooltip(true);
+  }
+
+  const handleMouseLeave = ()=>{
+    setShowTooltip(false);
+  }
+
   return (
     
     <div>
@@ -255,7 +274,15 @@ function LoginPage(props) {
         <label className={classes.h2}>Sign Up</label>
         <div className={classes.container}>
           <div className={classes.inputGrp}>
-            <label htmlFor="username">User Name:</label>
+            <div>
+              <label htmlFor="username">User Name:</label>
+              <button className={classes.infoButton}
+                  onMouseOver={handleMouseOver} 
+                  onMouseLeave={handleMouseLeave}>
+                ?
+              </button>
+            </div>
+            
             <InputWithDebounce 
               className={classes.input}
               type="text"
@@ -263,7 +290,7 @@ function LoginPage(props) {
               value={username}
               onChange={handleUsernameChange} 
               delay={500}/>
-            <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>
+            {showTooltip && <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>}
           </div>
           <label className={classes.message} style={{margin:"5px auto"}}>{usernameValidMessage}</label>
           <div className={classes.inputGrp}>

@@ -25,15 +25,15 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'downloads'))); // for audio download
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, "/index.html"));
-});
-
 // if not in production use the port 5010
 const PORT = process.env.PORT || 5010;
 const hostUrl = "http://localhost:"+PORT;
 console.log('server started on port:', PORT);
 app.listen(PORT);
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, "/index.html"));
+});
 
 /**
  * Connect Mongo Driver to MongoDB.
@@ -46,10 +46,31 @@ let mongoUrlDocker = "mongodb://admin:password@mongodb:27017/audio-db?authSource
 // Create mongo connection
 let gfs;
 // Init gfs
+const User = mongoose.model('users', new mongoose.Schema({
+  username: { type: String, required: true },
+  password: { type: String, required: true },
+}));
+const createDefaultUser = async ()=>{
+  const user = await User.findOne({ username: 'administrator' }).exec();
+  if(!user){
+    console.log("default administrator is not exist, create it first")
+    bcrypt.genSalt().then(salt=>{
+      bcrypt.hash('1Password', salt)
+      .then(hashedPassword=>{
+        const defaultUser = new User({ username: 'administrator', password: hashedPassword});
+        defaultUser.save()
+          .then(() => { console.log('Default user created'); })
+          .catch(err => console.error('Error creating default user', err));
+      })
+    })
+  }
+}
+
 const conn = mongoose.createConnection(mongoUrlLocal);
 conn.once('open', () => {
-  // Init stream
+  // Init stream and defaut user
   gfs = new mongoose.mongo.GridFSBucket(conn.db, {bucketName:'audios'});
+  createDefaultUser();
 });
 
 mongoose.connect(mongoUrlLocal).then(res=>{
@@ -90,25 +111,8 @@ const upload = multer({ storage });
 /**
  * User Login services
  */
-const User = mongoose.model('users', new mongoose.Schema({
-  username: { type: String, required: true },
-  password: { type: String, required: true },
-}));
-const createDefaultUser = async ()=>{
-  const user = await User.findOne({ username: 'administrator' }).exec();
-  if(!user){
-    bcrypt.genSalt().then(salt=>{
-      bcrypt.hash('1Password', salt)
-      .then(hashedPassword=>{
-        const defaultUser = new User({ username: 'administrator', password: hashedPassword});
-        defaultUser.save()
-          .then(() => { console.log('Default user created'); })
-          .catch(err => console.error('Error creating default user', err));
-      })
-    })
-  }
-}
-createDefaultUser();
+
+// createDefaultUser();
 
 app.get('/api/checkusername/:username',async (req,res)=>{
   const { username } = req.params;

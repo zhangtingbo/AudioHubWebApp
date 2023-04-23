@@ -12,17 +12,26 @@ import InputWithDebounce from '../components/InputWithDebounce';
 
 const useStyles = makeStyles((theme) => ({
   root: {
-      height: '380px',
+      display:'flex',
+      flexDirection:'column',
       width: '400px',
-      margin: '20px auto',
-      backgroundColor: theme.palette.primary.bg,
       color: theme.palette.primary.contrastText,
-      boxShadow: '5px 5px 5px 0 rgba(0, 0, 0, 0.4)',
+      margin:'10px auto'
   },
   container:{
-    width:'240px',
-    margin: '0 auto',
-    padding:'20px'
+    width: '100%',
+    margin: '20px auto',
+  },
+  basecontainer:{
+    width: '80%',
+    backgroundColor: theme.palette.primary.bg,
+    margin: '20px auto',
+    boxShadow: '5px 5px 5px 0 rgba(0, 0, 0, 0.4)',
+  },
+  inputGrp: {
+    display:'flex',
+    flexDirection: 'column',
+    margin:'10px'
   },
   h2:{
     display:'block',
@@ -31,7 +40,7 @@ const useStyles = makeStyles((theme) => ({
   },
   h3:{
     display:'block',
-    fontSize:'1.5em'
+    fontSize:'1.2em'
   },
   h4:{
     display:'block',
@@ -45,27 +54,29 @@ const useStyles = makeStyles((theme) => ({
     fontSize:'0.8em',
     color:theme.palette.primary.lightText
   },
+  infoButton:{
+    borderRadius: '50%',
+    border: 'none',
+    width:'25px',
+    height:'25px',
+    margin:'5px',
+    color:theme.palette.primary.contrastText,
+    backgroundColor:theme.palette.primary.lightbg
+  },
   input:{
       width:'100%'
   },
   button: {
-      marginTop:'20px'
+    width:'100px',
+    margin:'10px auto'
   },
-  inputGrp: {
-    display:'flex',
-    flexDirection: 'column',
-    alignItems:'baseline'
-  },
-  withButton:{
-    display:'flex',
-    flexDirection:'row',
-    height:'25px'
-  },
+
   buttonGrp:{
     display:'flex',
     flexDirection:'row',
     justifyContent:'space-around',
-    margin:'20px auto'
+    margin:'5px auto',
+    width:'200px'
   }
 }));
 
@@ -82,6 +93,8 @@ function ManageAccountPage(props){
 
   const [message,setMessage] = useState('');
   const [strength,setStrenth] = useState("");
+
+  const [showTooltip, setShowTooltip] = useState(false);
 
   const handleUsernameUpdate = async ()=>{
     if(validateUsername(newusername)){
@@ -176,7 +189,8 @@ function ManageAccountPage(props){
       
       if(user.username === "administrator")
       {
-        setMessage("Can't delete administrator");
+        setMessage("Don't allow to delete administrator");
+        handleOpenConfirm(false);
       }
       else{
         Axios.delete(serverUrl+"/api/deleteaccount/"+user.userid)
@@ -217,37 +231,63 @@ function ManageAccountPage(props){
     
   }
 
+  const handleMouseOver = ()=>{
+    setShowTooltip(true);
+  }
+
+  const handleMouseLeave = ()=>{
+    setShowTooltip(false);
+  }
+
+  const [openconfirm, setOpenconfirm] = useState(false);
+
+  const handleOpenConfirm = (value) => {
+    setOpenconfirm(value);
+  };
+
+
   return (
     <Paper className={classes.root}>
-      <label className={classes.h2}>Manage Your Account</label>
-      <label className={classes.h3}>Current User：{user.username}</label>
+      {/* User info */}
       <div className={classes.container}>
+        <label className={classes.h2}>Manage Your Account</label>
+        <label className={classes.h3}>Current User：{user.username}</label>
+      </div>
+
+      <label className={classes.message}>{message}</label>
+
+      {/* Change username */}
+      <div className={classes.basecontainer}>
         <div className={classes.inputGrp}>
-          <label htmlFor="newusername">Update New User Name:</label>
-          <div className={classes.withButton}>
-            {/* <input
-              type="text"
-              id="newusername"
-              value={newusername}
-              onChange={(e) => setNewusername(e.target.value)}
-            /> */}
-            <InputWithDebounce 
-              className={classes.input}
+          <div>
+            <label htmlFor="newusername">Update User Name:</label>
+            <button className={classes.infoButton}
+                onMouseOver={handleMouseOver} 
+                onMouseLeave={handleMouseLeave}>
+              ?
+            </button>
+          </div>
+          
+          <InputWithDebounce 
               type="text"
               id="newusername"
               value={newusername}
               onChange={handleNewUsernameChange}
               delay={500}
-            />
-            <button onClick={handleUsernameUpdate}>Confirm</button>
-          </div>
-          <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>
+          />
+
+          {showTooltip && <label className={classes.infomessage}>Must be 6 to 24 alphanumeric characters</label>}
+
+          <button className={classes.button} onClick={handleUsernameUpdate}>Confirm</button>
+          
         </div> 
-        <div style={{marginTop:'10px'}}>
+      </div>
+
+      {/* Change password */}
+      <div className={classes.basecontainer}>
           <div className={classes.inputGrp}>
             <label htmlFor="password">New Password:</label>
             <InputWithDebounce 
-              className={classes.input}
               type="password"
               id="password"
               value={password}
@@ -256,29 +296,41 @@ function ManageAccountPage(props){
             />
             <label className={`password-strength ${strength}`}></label>
           </div>
+
           <div className={classes.inputGrp}>
             <label htmlFor="confirmPassword">Confirm New Password:</label>
-            <div className={classes.withButton}>
-              <input
+            <input
                 type="password"
                 id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              <button onClick={handlePasswordUpdate}>Confirm</button>
+            />
+          </div>
+
+          <button className={classes.button} onClick={handlePasswordUpdate}>Confirm</button>
+      </div>
+
+      {/* delete account */}
+      <div className={classes.basecontainer}>
+        <div className={classes.inputGrp}>
+          <label htmlFor="deleteaccount">Delete Account:</label>
+          <button className={classes.button} onClick={()=>handleOpenConfirm(true)}>Delete</button>
+        </div>
+
+        {openconfirm && (
+          <div style={{margin:'10px'}}>
+            <div>Are you sure you want to delete this account？</div>
+            <div className={classes.buttonGrp}>
+              <button className={classes.button} onClick={handleDeleteAccount}>Yes</button>
+              <button className={classes.button} onClick={()=>handleOpenConfirm(false)}>Cancel</button>
             </div>
           </div>
-        </div>
-        {/* <button type="submit">Confirm</button> */}
-        
-        <label className={classes.message}>{message}</label>
-
-        <div className={classes.buttonGrp}>
-          <button onClick={handleDeleteAccount}>Delete Account</button>
-          <button onClick={handleCancel}>Cancel</button>
-        </div>
-
+        )}
       </div>
+
+      {/* cancel */}
+      <button className={classes.button} onClick={handleCancel}>Cancel</button>
+
     </Paper>
   );
 }
