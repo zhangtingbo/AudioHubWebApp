@@ -33,6 +33,7 @@ const useStyles = makeStyles((theme) => ({
     flexDirection: 'column',
     margin:'10px'
   },
+  inputGrpTitle:{display:'flex',margin:'0 auto',paddingButton:'10px'},
   h2:{
     display:'block',
     height:'40px',
@@ -40,11 +41,8 @@ const useStyles = makeStyles((theme) => ({
   },
   h3:{
     display:'block',
-    fontSize:'1.2em'
-  },
-  h4:{
-    display:'block',
-    fontSize:'1em'
+    fontSize:'1.1em',
+    alignSelf:'center'
   },
   message:{
     fontSize:'1em',
@@ -70,7 +68,9 @@ const useStyles = makeStyles((theme) => ({
     width:'100px',
     margin:'10px auto'
   },
-
+  label:{
+    alignSelf:'baseline'
+  },
   buttonGrp:{
     display:'flex',
     flexDirection:'row',
@@ -259,8 +259,8 @@ function ManageAccountPage(props){
       {/* Change username */}
       <div className={classes.basecontainer}>
         <div className={classes.inputGrp}>
-          <div>
-            <label htmlFor="newusername">Update User Name:</label>
+          <div className={classes.inputGrpTitle}>
+            <label className={classes.h3} htmlFor="newusername">Update User Name:</label>
             <button className={classes.infoButton}
                 onMouseOver={handleMouseOver} 
                 onMouseLeave={handleMouseLeave}>
@@ -286,7 +286,12 @@ function ManageAccountPage(props){
       {/* Change password */}
       <div className={classes.basecontainer}>
           <div className={classes.inputGrp}>
-            <label htmlFor="password">New Password:</label>
+
+            <div className={classes.inputGrpTitle}>
+              <label className={classes.h3} htmlFor="newpassword">Update Password:</label>
+            </div>
+            
+            <label className={classes.label} htmlFor="password">New Password:</label>
             <InputWithDebounce 
               type="password"
               id="password"
@@ -295,10 +300,8 @@ function ManageAccountPage(props){
               delay={500}
             />
             <label className={`password-strength ${strength}`}></label>
-          </div>
 
-          <div className={classes.inputGrp}>
-            <label htmlFor="confirmPassword">Confirm New Password:</label>
+            <label className={classes.label} htmlFor="confirmPassword">Confirm New Password:</label>
             <input
                 type="password"
                 id="confirmPassword"
@@ -313,7 +316,7 @@ function ManageAccountPage(props){
       {/* delete account */}
       <div className={classes.basecontainer}>
         <div className={classes.inputGrp}>
-          <label htmlFor="deleteaccount">Delete Account:</label>
+          <label className={classes.h3} htmlFor="deleteaccount">Delete Account:</label>
           <button className={classes.button} onClick={()=>handleOpenConfirm(true)}>Delete</button>
         </div>
 
